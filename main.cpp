@@ -1,6 +1,78 @@
 #include <iostream>
+#include <map>
+
+#include <boost/filesystem.hpp>
+
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <unistd.h>
+
 #include "my_config.h"
 #include "my_arg_parser.h"
+#include "additionals.h"
+
+
+void print_object(myConfig &config, std::string &objectname, struct stat &object_stat){
+    // Object is a directory
+    if (S_ISDIR(object_stat.st_mode)){
+        std::cout << "/";
+    } else if (config.specify_type){
+        if ((object_stat.st_mode & S_IEXEC) != 0){
+            // Object is executable
+            std::cout << "*";
+        } else if(S_ISLNK(object_stat.st_mode)){
+            // Object is symbolic link
+            std::cout << "@";
+        } else if(S_ISSOCK(object_stat.st_mode)){
+            // Object is socket
+            std::cout << "=";
+            // TODO: check if NAMED CHANEL
+        } else if (!S_ISREG(object_stat.st_mode)){
+            // Others
+            std::cout << "?";
+        }
+    }
+    // name
+    std::cout << objectname << "\t";
+    if (config.detailed_info){
+        // size, date and time of last modification
+        char date_string[100];
+        char time_string[100];
+        convert_time(static_cast<unsigned long>(object_stat.st_mtimespec.tv_sec), date_string, time_string);
+        std::cout << object_stat.st_size << "\t" << date_string << " " << time_string << std::endl;
+    }
+}
+
+void process_objects(myConfig &config, std::vector<std::string> &objects){
+    std::map<std::string, struct stat> object_info;
+
+    for (auto &object: objects){
+        if (boost::filesystem::exists(object)){
+            struct stat *object_stat;
+            if (stat(object.c_str(), object_stat) != -1){
+//                object_
+            } else{
+                std::cerr << "Unable to get stat: " << object << std::endl;
+            }
+        } else{
+            // TODO: change to system call
+            std::cerr << "File does not exists: " << object << std::endl;
+        }
+    }
+
+    // TODO: sorting
+}
+
+void process_directory(){
+    // TODO: get names of files in directory
+    // TODO: process files in this directory
+}
+
+void process_wildcard(){
+    // TODO: get names of files, which satisfies wildcard
+    // TODO: process files
+}
+
 
 int main(int argc, char** argv){
     myConfig config;
@@ -10,27 +82,23 @@ int main(int argc, char** argv){
     }
 
     if (config.help){
-        std::cout << "List files and directories in specified order." << std::endl;
-        std::cout << "Usage: myls [path|mask] [-l] [-h|--help] [--sort=U|S|t|X|D|s] [-r]" << std::endl;
-        std::cout << "-l -- print detailed information about each file / directory." << std::endl;
-        std::cout << "-h|--help -- help screen." << std::endl;
-        std::cout << "--sort -- sorting option." << std::endl;
-        std::cout << "\tU -- unsorted." << std::endl;
-        std::cout << "\tS -- by size." << std::endl;
-        std::cout << "\tt -- by time of last modification." << std::endl;
-        std::cout << "\tN -- by name (default option)." << std::endl;
-        std::cout << "\tD -- directories first." << std::endl;
-        std::cout << "\ts -- specific files separately." << std::endl;
-        std::cout << "-r -- reversed order of sorted option." << std::endl;
-        std::cout << "-F -- specify type of special files." << std::endl;
-        std::cout << "-R -- bypass directories recursively." << std::endl;
+        help_option();
         return 0;
     }
 
-    // TODO: check if each passed file in arguments exists
-    // TODO: get info about each file
-    // TODO: sort and print files
-
-
+    for (auto &object: config.objects){
+        // TODO: check for wildcard and process_objects
+        if (boost::filesystem::exists(object)){
+            if (boost::filesystem::is_directory(object)){
+                // TODO: process as directory
+            }
+            struct stat *object_stat;
+            if (stat(object.c_str(), object_stat) != -1){
+                print_object(config, object, *object_stat);
+            }
+        } else{
+            std::cerr << "File does not exists: " << object << std::endl;
+        }
+    }
     return 0;
 }

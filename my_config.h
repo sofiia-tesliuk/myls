@@ -1,5 +1,5 @@
-#ifndef MYSHELL_MYCONFIG_H
-#define MYSHELL_MYCONFIG_H
+#ifndef MYLS_MYCONFIG_H
+#define MYLS_MYCONFIG_H
 
 #include <iostream>
 #include <vector>
@@ -23,4 +23,6 @@ struct myConfig{
     std::vector<std::string> objects;
 };
 
-#endif //MYSHELL_MYCONFIG_H
+void help_option();
+
+#endif //MYLS_MYCONFIG_H
