@@ -36,8 +36,8 @@ void print_object(myConfig &config, std::string &objectname, struct stat &object
     std::cout << objectname << "\t";
     if (config.detailed_info){
         // size, date and time of last modification
-        char date_string[100];
-        char time_string[100];
+        char date_string[20];
+        char time_string[20];
         convert_time(static_cast<unsigned long>(object_stat.st_mtimespec.tv_sec), date_string, time_string);
         std::cout << object_stat.st_size << "\t" << date_string << " " << time_string << std::endl;
     }
@@ -48,24 +48,35 @@ void process_objects(myConfig &config, std::vector<std::string> &objects){
 
     for (auto &object: objects){
         if (boost::filesystem::exists(object)){
-            struct stat *object_stat;
-            if (stat(object.c_str(), object_stat) != -1){
-//                object_
+            struct stat object_stat;
+            if (stat(object.c_str(), &object_stat) == 0){
+                print_object(config, object, object_stat);
+                object_info.insert(std::pair<std::string, struct stat>(object, object_stat));
             } else{
                 std::cerr << "Unable to get stat: " << object << std::endl;
+                std::cout << errno << std::endl;
             }
         } else{
-            // TODO: change to system call
             std::cerr << "File does not exists: " << object << std::endl;
         }
     }
 
     // TODO: sorting
+
+
 }
 
-void process_directory(){
-    // TODO: get names of files in directory
-    // TODO: process files in this directory
+void process_directory(myConfig &config, std::string &path, struct stat &dir_stat){
+    if (!config.detailed_info){
+        std::cout << std::endl;
+    }
+    std::vector<std::string> contents;
+    directory_contents(path, contents);
+    print_object(config, path, dir_stat);
+    if (!config.detailed_info){
+        std::cout << std::endl;
+    }
+    process_objects(config, contents);
 }
 
 void process_wildcard(){
@@ -89,12 +100,15 @@ int main(int argc, char** argv){
     for (auto &object: config.objects){
         // TODO: check for wildcard and process_objects
         if (boost::filesystem::exists(object)){
-            if (boost::filesystem::is_directory(object)){
-                // TODO: process as directory
-            }
-            struct stat *object_stat;
-            if (stat(object.c_str(), object_stat) != -1){
-                print_object(config, object, *object_stat);
+            struct stat object_stat;
+            if (stat(object.c_str(), &object_stat) == 0){
+                if (boost::filesystem::is_directory(object)){
+                    process_directory(config, object, object_stat);
+                }else{
+                    print_object(config, object, object_stat);
+                }
+            } else{
+                std::cerr << "Unable to get stat of: " << object << std::endl;
             }
         } else{
             std::cerr << "File does not exists: " << object << std::endl;

@@ -4,11 +4,13 @@
 int parse_arguments(int argc, char** argv, myConfig &config){
     // TODO: take to attention name of files in quotes
 //    bool in_quotes = false;
-    int i = 1;
+    int i;
     bool only_files = false;
     std::set<char> sorting_methods = {'U', 'S', 't', 'D', 's'};
 
-    for(i = 1; i < argc; i++){
+    // argv[0] -- current directory
+    // argv[1] -- ./myls
+    for(i = 2; i < argc; i++){
             size_t len = strlen(argv[i]);
             if (strncmp(argv[i], "-", 1) == 0){
                 if (len == 2){

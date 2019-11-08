@@ -11,7 +11,7 @@ find_package(Boost REQUIRED system)
 set(ICU_MAJOR_VER "57")
 set(ICU_FULL_VERSION "${ICU_MAJOR_VER}.1")
 
-add_executable(myls main.cpp my_arg_parser.cpp my_config.cpp io_manager.cpp additionals.cpp)
+add_executable(myls main.cpp my_arg_parser.cpp my_config.cpp additionals.cpp)
 
 target_link_libraries(myls
         ${Boost_FILESYSTEM_LIBRARY}

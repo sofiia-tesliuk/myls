@@ -12,7 +12,7 @@ struct myConfig{
     // -l | detailed information
     bool detailed_info = false;
     // --sort | sorting by
-    std::vector<std::string> sorting;
+    std::vector<char> sorting;
     // -r | reversed order of sorting
     bool reversed_order = false;
     // -F | specify type of file
