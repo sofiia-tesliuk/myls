@@ -43,15 +43,22 @@ void print_object(myConfig &config, std::string &objectname, struct stat &object
     }
 }
 
+
 void process_objects(myConfig &config, std::vector<std::string> &objects){
-    std::map<std::string, struct stat> object_info;
+    std::set<myStat> object_info;
+
+    // TODO: sorting into comparator
+
 
     for (auto &object: objects){
         if (boost::filesystem::exists(object)){
             struct stat object_stat;
             if (stat(object.c_str(), &object_stat) == 0){
                 print_object(config, object, object_stat);
-                object_info.insert(std::pair<std::string, struct stat>(object, object_stat));
+                myStat newMyStat;
+                newMyStat.filename = object;
+                newMyStat.filestatStat = object_stat;
+                object_info.insert(newMyStat);
             } else{
                 std::cerr << "Unable to get stat: " << object << std::endl;
                 std::cout << errno << std::endl;
@@ -60,11 +67,8 @@ void process_objects(myConfig &config, std::vector<std::string> &objects){
             std::cerr << "File does not exists: " << object << std::endl;
         }
     }
-
-    // TODO: sorting
-
-
 }
+
 
 void process_directory(myConfig &config, std::string &path, struct stat &dir_stat){
     if (!config.detailed_info){
@@ -79,9 +83,14 @@ void process_directory(myConfig &config, std::string &path, struct stat &dir_sta
     process_objects(config, contents);
 }
 
-void process_wildcard(){
-    // TODO: get names of files, which satisfies wildcard
-    // TODO: process files
+
+void process_wildcard(myConfig &config, const std::string &wildcard){
+    std::vector<std::string> wildcards_objects;
+    wildcard_matching(wildcard, wildcards_objects);
+    if (!wildcards_objects.empty())
+        process_objects(config, wildcards_objects);
+    else
+        std::cerr << "Unable to get matching for this wildcard: " << wildcard <<std::endl;
 }
 
 
@@ -98,20 +107,23 @@ int main(int argc, char** argv){
     }
 
     for (auto &object: config.objects){
-        // TODO: check for wildcard and process_objects
-        if (boost::filesystem::exists(object)){
-            struct stat object_stat;
-            if (stat(object.c_str(), &object_stat) == 0){
-                if (boost::filesystem::is_directory(object)){
-                    process_directory(config, object, object_stat);
-                }else{
-                    print_object(config, object, object_stat);
+        if (is_wildcard(object)){
+            process_wildcard(config, object);
+        } else {
+            if (boost::filesystem::exists(object)) {
+                struct stat object_stat;
+                if (stat(object.c_str(), &object_stat) == 0) {
+                    if (boost::filesystem::is_directory(object)) {
+                        process_directory(config, object, object_stat);
+                    } else {
+                        print_object(config, object, object_stat);
+                    }
+                } else {
+                    std::cerr << "Unable to get stat of: " << object << std::endl;
                 }
-            } else{
-                std::cerr << "Unable to get stat of: " << object << std::endl;
+            } else {
+                std::cerr << "File does not exist: " << object << std::endl;
             }
-        } else{
-            std::cerr << "File does not exists: " << object << std::endl;
         }
     }
     return 0;
