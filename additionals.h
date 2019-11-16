@@ -5,6 +5,7 @@
 #include <ctime>
 #include <string>
 #include <vector>
+#include <sys/stat.h>
 
 #include <glob.h>
 
@@ -12,7 +13,7 @@
 
 struct myStat{
     std::string filename;
-    struct stat filestatStat;
+    struct stat fileStat;
 };
 
 void convert_time(unsigned long seconds, char *date_string, char *time_string);

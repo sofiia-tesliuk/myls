@@ -10,9 +10,10 @@
 #include "my_config.h"
 #include "my_arg_parser.h"
 #include "additionals.h"
+#include "comparartors.h"
 
 
-void print_object(myConfig &config, std::string &objectname, struct stat &object_stat){
+void print_object(myConfig &config, std::string object_name, struct stat object_stat){
     // Object is a directory
     if (S_ISDIR(object_stat.st_mode)){
         std::cout << "/";
@@ -33,7 +34,7 @@ void print_object(myConfig &config, std::string &objectname, struct stat &object
         }
     }
     // name
-    std::cout << objectname << "\t";
+    std::cout << object_name << "\t";
     if (config.detailed_info){
         // size, date and time of last modification
         char date_string[20];
@@ -45,19 +46,14 @@ void print_object(myConfig &config, std::string &objectname, struct stat &object
 
 
 void process_objects(myConfig &config, std::vector<std::string> &objects){
-    std::set<myStat> object_info;
-
-    // TODO: sorting into comparator
-
-
+    std::set<myStat> object_info = build_set_with_comparator(config);
     for (auto &object: objects){
         if (boost::filesystem::exists(object)){
             struct stat object_stat;
             if (stat(object.c_str(), &object_stat) == 0){
-                print_object(config, object, object_stat);
                 myStat newMyStat;
                 newMyStat.filename = object;
-                newMyStat.filestatStat = object_stat;
+                newMyStat.fileStat = object_stat;
                 object_info.insert(newMyStat);
             } else{
                 std::cerr << "Unable to get stat: " << object << std::endl;
@@ -65,6 +61,22 @@ void process_objects(myConfig &config, std::vector<std::string> &objects){
             }
         } else{
             std::cerr << "File does not exists: " << object << std::endl;
+        }
+    }
+
+    if (config.reversed_order){
+        auto revIt = object_info.rbegin();
+        while (revIt != object_info.rend())
+        {
+            print_object(config, (*revIt).filename, (*revIt).fileStat);
+            revIt++;
+        }
+    } else{
+        auto it = object_info.begin();
+        while (it != object_info.end())
+        {
+            print_object(config, (*it).filename, (*it).fileStat);
+            it++;
         }
     }
 }

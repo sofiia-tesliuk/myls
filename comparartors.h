@@ -3,23 +3,26 @@
 
 
 #include "additionals.h"
-//
-//std::cout << "\tU -- unsorted." << std::endl;
-//std::cout << "\tS -- by size." << std::endl;
-//std::cout << "\tt -- by time of last modification." << std::endl;
-//std::cout << "\tN -- by name (default option)." << std::endl;
-//std::cout << "\tD -- directories first." << std::endl;
-//std::cout << "\ts -- specific files separately." << std::endl;
-//std::cout << "-r -- reversed order of sorted option." << std::endl;
-//std::cout << "-F -- specify type of special files." << std::endl;
-//std::cout << "-R -- bypass directories recursively." << std::endl;
+#include <iostream>
+#include <set>
+#include <sys/stat.h>
 
-bool bySize(const myStat& a, const myStat& b);
-bool byTimeOfLastModification(const myStat& a, const myStat& b);
-bool byName(const myStat& a, const myStat& b);
-bool directoriesFirst(const myStat& a, const myStat& b);
-bool specialFilesSeparately(const myStat& a, const myStat& b);
+#include "my_config.h"
 
 
+// 0 -- a == b
+// -1 -- a < b
+// 1 -- a > b
+int bySize(const myStat& a, const myStat& b);
+
+int byTimeOfLastModification(const myStat& a, const myStat& b);
+
+int byName(const myStat& a, const myStat& b);
+
+int directoriesFirst(const myStat& a, const myStat& b);
+
+int specialFilesSeparately(const myStat& a, const myStat& b);
+
+std::set<myStat> build_set_with_comparator(myConfig &config);
 
 #endif //MYLS_COMPARARTORS_H
