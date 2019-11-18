@@ -3,7 +3,6 @@
 
 int parse_arguments(int argc, char** argv, myConfig &config){
     // TODO: take to attention name of files in quotes
-//    bool in_quotes = false;
     int i;
     bool only_files = false;
     std::set<char> sorting_methods = {'U', 'S', 't', 'D', 's', 'N'};
@@ -61,14 +60,12 @@ int parse_arguments(int argc, char** argv, myConfig &config){
                     return -3;
                 }
             } else{
-                // TODO: take to attention names in quotes
                config.objects.emplace_back(argv[i]);
             }
     }
 
     // all further arguments are files or directories
     for (; i < argc; i++){
-        // TODO: take to attention names in quotes
         config.objects.emplace_back(argv[i]);
     }
 

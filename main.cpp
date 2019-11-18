@@ -55,10 +55,6 @@ void process_objects(myConfig &config, std::vector<std::string> &objects, bool w
             if (stat(object.c_str(), &object_stat) == 0){
                 myStat newMyStat;
                 newMyStat.filename = object;
-                if (withoutParentDirectory){
-                    boost::filesystem::path p(newMyStat.filename);
-                    newMyStat.filename = p.filename().string();
-                }
                 newMyStat.fileStat = object_stat;
                 vector_object_info.emplace_back(newMyStat);
             } else{
@@ -83,6 +79,10 @@ void process_objects(myConfig &config, std::vector<std::string> &objects, bool w
         if ((S_ISDIR(ob.fileStat.st_mode)) && config.iter_recursively){
             process_directory(config, ob.filename, ob.fileStat);
         } else{
+            if (withoutParentDirectory){
+                boost::filesystem::path p(ob.filename);
+                ob.filename = p.filename().string();
+            }
             print_object(config, ob.filename, ob.fileStat);
         }
     }
@@ -96,6 +96,7 @@ void process_directory(myConfig &config, std::string &path, struct stat &dir_sta
     std::vector<std::string> contents;
     directory_contents(path, contents);
     print_object(config, path, dir_stat);
+    std::cout << ":";
     if (!config.detailed_info){
         std::cout << " " << std::endl;
     }
