@@ -26,10 +26,11 @@ void print_object(myConfig &config, std::string &object_name, struct stat &objec
         } else if(S_ISLNK(object_stat.st_mode)){
             // Object is symbolic link
             std::cout << "@";
-        } else if(S_ISSOCK(object_stat.st_mode)){
+        } else if(S_ISSOCK(object_stat.st_mode)) {
             // Object is socket
             std::cout << "=";
-            // TODO: check if NAMED CHANEL
+        } else if(S_ISFIFO(object_stat.st_mode)){
+            std::cout << "|";
         } else if (!S_ISREG(object_stat.st_mode)){
             // Others
             std::cout << "?";
