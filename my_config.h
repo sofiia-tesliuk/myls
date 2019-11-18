@@ -5,6 +5,8 @@
 #include <vector>
 #include <string>
 
+#include "additionals.h"
+
 
 struct myConfig{
     // -h, --help | Help option
@@ -12,7 +14,8 @@ struct myConfig{
     // -l | detailed information
     bool detailed_info = false;
     // --sort | sorting by
-    std::vector<char> sorting;
+    typedef bool (*pfunc)(const myStat&, const myStat&);
+    std::vector<pfunc> sorting;
     // -r | reversed order of sorting
     bool reversed_order = false;
     // -F | specify type of file

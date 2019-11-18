@@ -6,7 +6,17 @@ int parse_arguments(int argc, char** argv, myConfig &config){
 //    bool in_quotes = false;
     int i;
     bool only_files = false;
-    std::set<char> sorting_methods = {'U', 'S', 't', 'D', 's'};
+    std::set<char> sorting_methods = {'U', 'S', 't', 'D', 's', 'N'};
+
+    typedef bool (*pfunc)(const myStat&, const myStat&);
+    std::map<char, pfunc> funcMap;
+    funcMap.insert(std::pair<char, pfunc>('N', byName));
+    funcMap.insert(std::pair<char, pfunc>('U', unsorted));
+    funcMap.insert(std::pair<char, pfunc>('S', bySize));
+    funcMap.insert(std::pair<char, pfunc>('t', byTimeOfLastModification));
+    funcMap.insert(std::pair<char, pfunc>('D', directoriesFirst));
+    funcMap.insert(std::pair<char, pfunc>('s', specialFilesSeparately));
+    config.sorting.push_back(byName);
 
     // argv[0] -- current directory
     // argv[1] -- ./myls
@@ -37,9 +47,10 @@ int parse_arguments(int argc, char** argv, myConfig &config){
                     if (only_files)
                         break;
                 } else if (strncmp(argv[i], "--sort", 6) == 0){
-                    for (int j = 6; j < len; j++){
+                    // 6 -- '='
+                    for (int j = 7; j < len; j++){
                         if (sorting_methods.find(argv[i][j]) != sorting_methods.end()){
-                            config.sorting.emplace_back(argv[i][j]);
+                            config.sorting.emplace_back(funcMap[argv[i][j]]);
                         } else{
                             std::cerr << "Unknown sorting method: " << argv[i][j] << std::endl;
                             return -2;

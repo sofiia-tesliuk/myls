@@ -13,7 +13,9 @@
 #include "comparartors.h"
 
 
-void print_object(myConfig &config, std::string object_name, struct stat object_stat){
+void process_directory(myConfig &config, std::string &path, struct stat &dir_stat);
+
+void print_object(myConfig &config, std::string &object_name, struct stat &object_stat){
     // Object is a directory
     if (S_ISDIR(object_stat.st_mode)){
         std::cout << "/";
@@ -45,16 +47,20 @@ void print_object(myConfig &config, std::string object_name, struct stat object_
 }
 
 
-void process_objects(myConfig &config, std::vector<std::string> &objects){
-    std::set<myStat> object_info = build_set_with_comparator(config);
+void process_objects(myConfig &config, std::vector<std::string> &objects, bool withoutParentDirectory){
+    std::vector<myStat> vector_object_info;
     for (auto &object: objects){
         if (boost::filesystem::exists(object)){
             struct stat object_stat;
             if (stat(object.c_str(), &object_stat) == 0){
                 myStat newMyStat;
                 newMyStat.filename = object;
+                if (withoutParentDirectory){
+                    boost::filesystem::path p(newMyStat.filename);
+                    newMyStat.filename = p.filename().string();
+                }
                 newMyStat.fileStat = object_stat;
-                object_info.insert(newMyStat);
+                vector_object_info.emplace_back(newMyStat);
             } else{
                 std::cerr << "Unable to get stat: " << object << std::endl;
                 std::cout << errno << std::endl;
@@ -64,19 +70,20 @@ void process_objects(myConfig &config, std::vector<std::string> &objects){
         }
     }
 
+    for (auto &sortFun: config.sorting){
+        std::sort(vector_object_info.begin(), vector_object_info.end(),
+                [&sortFun](const myStat& a, const myStat& b) -> bool{return sortFun(a, b);});
+    }
+
     if (config.reversed_order){
-        auto revIt = object_info.rbegin();
-        while (revIt != object_info.rend())
-        {
-            print_object(config, (*revIt).filename, (*revIt).fileStat);
-            revIt++;
-        }
-    } else{
-        auto it = object_info.begin();
-        while (it != object_info.end())
-        {
-            print_object(config, (*it).filename, (*it).fileStat);
-            it++;
+        std::reverse(std::begin(vector_object_info), std::end(vector_object_info));
+    }
+
+    for (auto &ob: vector_object_info){
+        if ((S_ISDIR(ob.fileStat.st_mode)) && config.iter_recursively){
+            process_directory(config, ob.filename, ob.fileStat);
+        } else{
+            print_object(config, ob.filename, ob.fileStat);
         }
     }
 }
@@ -84,23 +91,24 @@ void process_objects(myConfig &config, std::vector<std::string> &objects){
 
 void process_directory(myConfig &config, std::string &path, struct stat &dir_stat){
     if (!config.detailed_info){
-        std::cout << std::endl;
+        std::cout << " " << std::endl;
     }
     std::vector<std::string> contents;
     directory_contents(path, contents);
     print_object(config, path, dir_stat);
     if (!config.detailed_info){
-        std::cout << std::endl;
+        std::cout << " " << std::endl;
     }
-    process_objects(config, contents);
+    process_objects(config, contents, true);
 }
 
 
 void process_wildcard(myConfig &config, const std::string &wildcard){
     std::vector<std::string> wildcards_objects;
     wildcard_matching(wildcard, wildcards_objects);
+    std::cout << wildcard << std::endl;
     if (!wildcards_objects.empty())
-        process_objects(config, wildcards_objects);
+        process_objects(config, wildcards_objects, true);
     else
         std::cerr << "Unable to get matching for this wildcard: " << wildcard <<std::endl;
 }
@@ -116,6 +124,10 @@ int main(int argc, char** argv){
     if (config.help){
         help_option();
         return 0;
+    }
+
+    if (config.objects.empty()){
+        config.objects.emplace_back(".");
     }
 
     for (auto &object: config.objects){
